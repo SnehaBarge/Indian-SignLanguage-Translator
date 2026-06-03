@@ -14,7 +14,6 @@ and retrain with 2_train_model.py.
 Usage:
     python generate_and_train.py
 """
-
 import os
 import numpy as np
 import joblib
