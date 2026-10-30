@@ -3,7 +3,7 @@
 Real-time gesture recognition using **MediaPipe + LSTM** — converts live hand signs into ISL letters A–Z directly from your webcam.
 
 ![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python)
-![TensorFlow](https://img.shields.io/badge/TensorFlow-2.15%2B-orange?logo=tensorflow)
+![TensorFlow](https://img.shields.io/badge/TensorFlow-2.16.1-orange?logo=tensorflow)
 ![MediaPipe](https://img.shields.io/badge/MediaPipe-0.10%2B-green)
 ![Accuracy](https://img.shields.io/badge/Accuracy-88%25%2B-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue)
@@ -163,7 +163,8 @@ python 3_realtime_predict.py
 
 | Package           | Purpose                              |
 |-------------------|--------------------------------------|
-| `tensorflow`      | LSTM model training & inference      |
+| `tensorflow`      | 2.16.1 — LSTM model training & inference |
+| `keras`           | 3.14.1 — compatible with the included model |
 | `mediapipe`       | Real-time hand landmark detection    |
 | `opencv-python`   | Webcam capture & display             |
 | `numpy`           | Numerical arrays                     |

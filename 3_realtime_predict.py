@@ -136,6 +136,7 @@ def main():
     cur_letter = ''
     cur_conf   = 0.0
     last_t     = 0.0
+    last_appended = None
 
     print("Running — show your hand.  SPACE / BACK / C=clear / Q=quit")
 
@@ -147,29 +148,39 @@ def main():
 
         lmk, res = extract_landmarks(frame, lm)
         draw_landmarks(frame, res)
-        seq.append(lmk)
-
+        hand_present = bool(res.hand_landmarks)
         stab = 0
-        if len(seq) == SEQ_LEN:
-            probs      = model.predict(np.expand_dims(np.array(seq), 0), verbose=0)[0]
-            idx        = np.argmax(probs)
-            conf       = float(probs[idx])
-            label      = enc.classes_[idx]
-            cur_letter = label
-            cur_conf   = conf
+        if hand_present:
+            seq.append(lmk)
 
-            pred_buf.append(label if conf >= CONF_THRESH else '')
-            stab = sum(1 for p in pred_buf if p == cur_letter)
+            if len(seq) == SEQ_LEN:
+                probs      = model.predict(np.expand_dims(np.array(seq), 0), verbose=0)[0]
+                idx        = np.argmax(probs)
+                conf       = float(probs[idx])
+                label      = enc.classes_[idx]
+                cur_letter = label
+                cur_conf   = conf
 
-            now = time.time()
-            if stab >= STAB_FRAMES and conf >= CONF_THRESH and now - last_t > APPEND_DELAY:
-                sentence += cur_letter
-                last_t    = now
-                pred_buf.clear()
-                print(f"  → {cur_letter}  |  {sentence}")
+                pred_buf.append(label if conf >= CONF_THRESH else '')
+                stab = sum(1 for p in pred_buf if p == cur_letter)
+
+                now = time.time()
+                if (stab >= STAB_FRAMES and conf >= CONF_THRESH
+                        and label != last_appended and now - last_t > APPEND_DELAY):
+                    sentence += label
+                    last_t = now
+                    last_appended = label
+                    print(f"  → {label}  |  {sentence}")
+        else:
+            seq.clear()
+            pred_buf.clear()
+            cur_letter = ''
+            cur_conf = 0.0
+            last_t = 0.0
+            last_appended = None
 
         draw_ui(frame, sentence, cur_letter, cur_conf,
-                res.hand_landmarks is not None, stab)
+                hand_present, stab)
         cv2.imshow('ISL Real-Time', frame)
 
         k = cv2.waitKey(1) & 0xFF
