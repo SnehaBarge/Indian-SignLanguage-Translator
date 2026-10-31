@@ -61,49 +61,259 @@ def draw_landmarks(frame, res):
         cv2.circle(frame, (int(p.x * w), int(p.y * h)), 5, (255, 255, 255), -1)
 
 
+
 def draw_ui(frame, sentence, letter, conf, hand_detected, stab):
     h, w = frame.shape[:2]
 
-    # Top bar — current sentence
-    cv2.rectangle(frame, (0, 0), (w, 60), (0, 0, 0), -1)
+    # ---------------- TOP SECTION ----------------
+
+    # Top bar
+    cv2.rectangle(frame, (0, 0), (w, 100), (59, 41, 30), -1)
+
+    # Project title
+    cv2.putText(
+        frame,
+        "ISL TRANSLATOR",
+        (20, 35),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        1,
+        (255, 255, 255),
+        2
+    )
+
+    # Accumulated sentence
     cv2.putText(
         frame,
         sentence or '(start signing...)',
-        (10, 42), cv2.FONT_HERSHEY_SIMPLEX, 1.1, (0, 215, 255), 2,
+        (20, 80),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.8,
+        (220, 200, 80),
+        2
     )
 
-    # Bottom panel — prediction info
-    py = h - 110
-    cv2.rectangle(frame, (0, py), (w, h), (60, 60, 60), -1)
+    # ---------------- BOTTOM SECTION ----------------
 
-    if hand_detected:
-        cv2.putText(frame, f'Detected: {letter}', (10, py + 35),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1.2, (50, 205, 50), 2)
+    py = h - 140
 
-        # Confidence bar
-        bar_w = int(conf * 300)
-        bar_colour = (50, 205, 50) if conf >= CONF_THRESH else (0, 60, 220)
-        cv2.rectangle(frame, (10, py + 50), (310, py + 70), (80, 80, 80), -1)
-        cv2.rectangle(frame, (10, py + 50), (10 + bar_w, py + 70), bar_colour, -1)
-        cv2.putText(frame, f'{conf * 100:.0f}%', (320, py + 68),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 1)
+    # Bottom panel background
+    cv2.rectangle(frame, (0, py), (w, h), (56, 50, 38), -1)
 
-        # Stability dots
-        for i in range(STAB_FRAMES):
-            colour = (50, 205, 50) if i < stab else (80, 80, 80)
-            cv2.circle(frame, (10 + i * 22, py + 95), 8, colour, -1)
-    else:
-        cv2.putText(frame, 'No hand detected', (10, py + 45),
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 60, 220), 2)
+    # Separator line
+    cv2.line(frame, (0, py), (w, py), (90,90,90), 2)
+
+    # Keyboard instructions
+    controls_text = 'SPACE=space  BACK=delete  C=clear  Q=quit'
+
+    text_width = cv2.getTextSize(
+        controls_text,
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        1
+    )[0][0]
 
     cv2.putText(
         frame,
-        'SPACE=space  BACK=delete  C=clear  Q=quit',
-        (w - 510, py + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1,
+        controls_text,
+        (w - text_width - 20, py + 35),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.5,
+        (255, 255, 255),
+        1
     )
+
+    # ---------------- HAND DETECTION ----------------
+
+    if hand_detected:
+
+        cv2.putText(
+            frame,
+            f'Hand Detected | Letter: {letter}',
+            (20, py + 35),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (50, 205, 50),
+            2
+        )
+
+        # Confidence bar
+        bar_w = int(max(0, min(conf, 1)) * 300)
+
+        bar_colour = (
+            (50, 205, 50)
+            if conf >= CONF_THRESH
+            else (0, 60, 220)
+        )
+
+        cv2.putText(
+            frame,
+            'Confidence',
+            (20, py + 58),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.45,
+            (220, 220, 220),
+            1
+        )
+
+        cv2.rectangle(
+            frame,
+            (20, py + 65),
+            (320, py + 80),
+            (80, 80, 80),
+            -1
+        )
+
+        cv2.rectangle(
+            frame,
+            (20, py + 65),
+            (20 + bar_w, py + 80),
+            bar_colour,
+            -1
+        )
+
+        cv2.putText(
+            frame,
+            f'{conf * 100:.0f}%',
+            (330, py + 79),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.55,
+            (255, 255, 255),
+            1
+        )
+
+        # Stability indicators
+        cv2.putText(
+            frame,
+            'Prediction Stability',
+            (20, py + 105),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (220, 220, 220),
+            1
+        )
+
+        for i in range(STAB_FRAMES):
+            colour = (
+                (50, 205, 50)
+                if i < stab
+                else (80, 80, 80)
+            )
+
+            cv2.circle(
+                frame,
+                (200 + i * 22, py + 100),
+                7,
+                colour,
+                -1
+            )
+
+    else:
+
+        cv2.putText(
+            frame,
+            'No Hand Detected',
+            (20, py + 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.9,
+            (0, 80, 255),
+            2
+        )
+
+        cv2.putText(
+            frame,
+            'Show your hand to start recognition',
+            (20, py + 80),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (200, 200, 200),
+            1
+        )
+
+    
+    # ---------------- MOUSE CLICK BUTTONS ----------------
+
+    global BUTTON_RECTS
+
+    buttons = ["SPACE", "BACK", "CLEAR", "QUIT"]
+
+    btn_w = 145
+    btn_h = 42
+    gap = 12
+
+    start_x = w - (4 * btn_w + 3 * gap) - 20
+    btn_y = h - 55
+
+    BUTTON_RECTS = {}
+
+    for i, name in enumerate(buttons):
+
+        x1 = start_x + i * (btn_w + gap)
+        y1 = btn_y
+        x2 = x1 + btn_w
+        y2 = y1 + btn_h
+
+        BUTTON_RECTS[name] = (x1, y1, x2, y2)
+
+        cv2.rectangle(
+            frame,
+            (x1, y1),
+            (x2, y2),
+            (100, 100, 100),
+            -1
+        )
+
+        cv2.rectangle(
+            frame,
+            (x1, y1),
+            (x2, y2),
+            (255, 255, 255),
+            2
+        )
+
+        text_size = cv2.getTextSize(
+            name,
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            2
+        )[0]
+
+        text_x = x1 + (btn_w - text_size[0]) // 2
+        text_y = y1 + (btn_h + text_size[1]) // 2
+
+        cv2.putText(
+            frame,
+            name,
+            (text_x, text_y),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
+
+
+
+# Stores the button rectangles and clicked button
+BUTTON_RECTS = {}
+mouse_action = None
+
+
+def handle_mouse(event, x, y, flags, param):
+    global mouse_action
+
+    if event == cv2.EVENT_LBUTTONDOWN:
+        print("Mouse clicked:", x, y)
+
+        for name, (x1, y1, x2, y2) in BUTTON_RECTS.items():
+
+            if x1 <= x <= x2 and y1 <= y <= y2:
+                print("Clicked button:", name)
+                mouse_action = name
+                break
+
 
 
 def main():
+    global mouse_action
     # Validate required files exist
     for path, name in [(MODEL_PATH, 'model'), (ENCODER_PATH, 'encoder'), (LANDMARKER, 'landmarker')]:
         if not os.path.exists(path):
@@ -139,6 +349,8 @@ def main():
     last_appended = None
 
     print("Running — show your hand.  SPACE / BACK / C=clear / Q=quit")
+    cv2.namedWindow('ISL Real-Time')
+    cv2.setMouseCallback('ISL Real-Time', handle_mouse)
 
     while True:
         ret, frame = cap.read()
@@ -184,14 +396,36 @@ def main():
         cv2.imshow('ISL Real-Time', frame)
 
         k = cv2.waitKey(1) & 0xFF
+
+        # Get mouse button action
+        action = mouse_action
+        mouse_action = None
+
+        # Keyboard controls
         if k in (ord('q'), 27):
             break
+
         elif k == ord(' '):
-            sentence += ' '
-        elif k == 8:
-            sentence = sentence[:-1]
+            action = 'SPACE'
+
+        elif k in (8, 127):
+            action = 'BACK'
+
         elif k == ord('c'):
+            action = 'CLEAR'
+
+        # Execute actions
+        if action == 'SPACE':
+            sentence += ' '
+
+        elif action == 'BACK':
+            sentence = sentence[:-1]
+
+        elif action == 'CLEAR':
             sentence = ''
+
+        elif action == 'QUIT':
+            break
 
     cap.release()
     cv2.destroyAllWindows()
