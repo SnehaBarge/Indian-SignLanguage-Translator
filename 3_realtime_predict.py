@@ -17,12 +17,14 @@ import collections
 import time
 import joblib
 
+
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 from tensorflow import keras
 from mediapipe.tasks import python as mp_python
 from mediapipe.tasks.python import vision as mp_vision
 from mediapipe import Image as mpImage, ImageFormat
+from text_to_speech import TextToSpeech
 
 MODEL_PATH   = os.path.join('model', 'isl_lstm_model.keras')
 ENCODER_PATH = os.path.join('model', 'label_encoder.pkl')
@@ -98,7 +100,7 @@ def draw_ui(frame, sentence, letter, conf, hand_detected, stab):
 
     cv2.putText(
         frame,
-        'SPACE=space  BACK=delete  C=clear  Q=quit',
+            'SPACE=space  BACK=delete  C=clear  ENTER=speak  Q=quit',
         (w - 510, py + 25), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1,
     )
 
@@ -114,6 +116,7 @@ def main():
     print("Loading model...")
     model = keras.models.load_model(MODEL_PATH)
     enc   = joblib.load(ENCODER_PATH)
+    tts = TextToSpeech()
     print(f"Ready — {len(enc.classes_)} classes: {list(enc.classes_)}")
 
     opts = mp_vision.HandLandmarkerOptions(
@@ -168,6 +171,7 @@ def main():
                 if (stab >= STAB_FRAMES and conf >= CONF_THRESH
                         and label != last_appended and now - last_t > APPEND_DELAY):
                     sentence += label
+                    
                     last_t = now
                     last_appended = label
                     print(f"  → {label}  |  {sentence}")
@@ -191,13 +195,19 @@ def main():
         elif k == 8:
             sentence = sentence[:-1]
         elif k == ord('c'):
-            sentence = ''
+             sentence = ''
+
+        elif k == 13:  # ENTER key
+             if sentence.strip():
+                print("Speaking:", sentence)
+                tts.speak(sentence)
+             else:
+                print("No text available to speak.")       
 
     cap.release()
     cv2.destroyAllWindows()
     lm.close()
-    print(f"\nFinal sentence: {sentence}")
-
+    tts.close()
 
 if __name__ == '__main__':
     main()
